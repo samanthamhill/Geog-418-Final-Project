@@ -20,7 +20,7 @@ library("bcmaps")
 library("bcmapsdata")
 
 #Set working directory
-dir <- "/Volumes/KINGSTON 1/Geog418" #"/Users/samanthahill/Desktop/Geog 418/Final Project"  
+dir <- "/Users/samanthahill/Desktop/Geog 418/Final Project"  
 setwd(dir)
 
 #Reading in elevation dataset
@@ -547,11 +547,14 @@ grid.arrange(table1, newpage = TRUE)
   #Now, create choropleth map of residuals
   map_resid <- tm_shape(VRI.no0) +
   tm_polygons(col = "residuals",
-    title = "Stand Biomass Residuals",
+    title = "Stand Height Residuals",
     style = "jenks",
-    palette = "viridis", n = 6, border.alpha = 0)
-        
+    palette = "RdYlGn", n = 6, border.alpha = 0)+
+    tm_compass(position = c("right", "top"))
+      
+  png("residualMap.png")
   map_resid
+  dev.off()
 
 ######################################################################################################################################################
 ######################################################################################################################################################
@@ -633,13 +636,23 @@ grid.arrange(table1, newpage = TRUE)
   #Now for the magic. Let's add our local r-square values to the map
   VRI.no0$localr <- results$localR2
   
+  #VRI.no0.1 <-  VRI.no0[which(VRI.no0$localr >= -1.043), ]
+  
   #Create choropleth map of r-square values
   map_r2 <- tm_shape(VRI.no0) +
     tm_polygons(col = "localr",
                 title = "R2 values",
                 style = "jenks",
-                palette = "viridis", n = 6, border.alpha = 0)
+                palette = "viridis", n = 6, border.alpha = 0)+
+    tm_compass(position = c("right","top"))+
+    tm_layout(title = "Map of Local R-squared Values", inner.margins = 0.1)+
+    tm_scale_bar()
+  
+  png("R_squared.png")
   map_r2
+  dev.off()
+  
+  #hist(VRI.no0$localr)
   
   #Time for more magic. Let's map the coefficients
   VRI.no0$coeff <- results$VRI.no0.Elev
@@ -647,9 +660,15 @@ grid.arrange(table1, newpage = TRUE)
   map_coef <- tm_shape(VRI.no0) +
     tm_polygons(col = "coeff",
                 title = "Coefficients",
-                style = "jenks",
-                palette = "viridis", n = 6, border.alpha = 0)
+                style = "fisher",
+                palette = "RdYlGn", n = 5, border.alpha = 0)+
+    tm_compass(position = c("right","top"))+
+    tm_layout(title = "Map of Coefficient Values", inner.margins = 0.1)+
+    tm_scale_bar()
+  
+  png("Ceoff.png")
   map_coef
+  dev.off()
 
 ######################################################################################################################################################
 ######################################################################################################################################################
@@ -722,25 +741,26 @@ grid.arrange(table1, newpage = TRUE)
         z = ((nnd - r.nnd)/SE.NND)
   
   #MAKE A TABLE
-  NND <- c(nnd)
-  NNDr <- c(r.nnd)
-  NNDd <- c(d.nnd)
-  Sigma <- c(SE.NND)
-  Z_score <- c(z)
+  NND <- c(round(nnd, 2))
+  NNDr <- c(round(r.nnd, 2))
+  NNDd <- c(round(d.nnd, 2))
+  Sigma <- c(round(SE.NND,2))
+  Z_score <- c(round(z,2))
   
-  data.for.table2 = data.frame(elev, n , NND, NNDr, NNDd, Sigma, Z_score)
-  table2 <- tableGrob(data.for.table2) #make a table "Graphical Object" (GrOb) 
-  t2Caption <- textGrob("Table 2: Components of Nearest Neighbour Analysis for Elevation", gp = gpar(fontsize = 09))
-  padding <- unit(5, "mm")
-  
-  table2 <- gtable_add_rows(table2, 
-                            heights = grobHeight(t2Caption) + padding, 
+  data.for.table5 = data.frame(NND, NNDr, NNDd, Sigma, Z_score)
+  table5 <- tableGrob(data.for.table5, rows = c("")) #make a table "Graphical Object" (GrOb) 
+  t5Caption <- textGrob("Table 3: Results of NND PPA", gp = gpar(fontsize = 09))
+  padding <- unit(20, "mm")
+  table5 <- gtable_add_rows(table5, 
+                            heights = grobHeight(t5Caption) + padding, 
                             pos = 0)
   
-  table2 <- gtable_add_grob(table2,
-                            t2Caption, t = 1, l = 2, r = ncol(data.for.table2) + 1)
+  table5 <- gtable_add_grob(table5,
+                            t5Caption, t = 1, l = 2, r = ncol(data.for.table5) + 1)
   
-  grid.arrange(table2, newpage = TRUE)
+  png("NND_results.png")
+  grid.arrange(table5, newpage = TRUE)
+  dev.off()
   
   #6.3 KDE 
   kde.50 <- density(kma.ppp, sigma = 50, at = "pixels", eps = c(500, 500))
@@ -760,5 +780,7 @@ grid.arrange(table1, newpage = TRUE)
   plot(bw.d, ylim=c(-10, 10), main= "Cross-Validation Function for KDE of Elevation") 
   
   kde.bwo <- density(kma.ppp, sigma = bw.d, at = "pixels", eps = c(100, 100))
-  plot(kde.bwo, main = "KDE Result with Cross-Validation for Elevation")  
   
+  png("KDE.png")
+  plot(kde.bwo, main = "KDE Result with Cross-Validation for Elevation")  
+  dev.off()
